@@ -1,0 +1,383 @@
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class ParcelTrackingSystem extends JFrame {
+
+    private JTextField userIdField, parcelIdField, senderField, receiverField, shipmentDetailsField, locationField, statusField, estimatedDeliveryField;
+    private JTable trackingTable;
+    private DefaultTableModel tableModel;
+    private Timer timer;
+    private int trackingStep = 0; // To simulate live tracking steps
+
+    public ParcelTrackingSystem() {
+        setTitle("Parcel Tracking System");
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+
+        // Top panel for user ID and parcel ID input
+        JPanel topPanel = new JPanel(new FlowLayout());
+
+        JLabel userIdLabel = new JLabel("User ID:");
+        userIdField = new JTextField(10);
+        JLabel parcelIdLabel = new JLabel("Parcel ID:");
+        parcelIdField = new JTextField(10);
+        JButton trackButton = new JButton("Track");
+
+        topPanel.add(userIdLabel);
+        topPanel.add(userIdField);
+        topPanel.add(parcelIdLabel);
+        topPanel.add(parcelIdField);
+        topPanel.add(trackButton);
+
+        add(topPanel, BorderLayout.NORTH);
+
+        // Middle panel for parcel and shipment information
+        JPanel infoPanel = new JPanel(new GridLayout(7, 2, 5, 5));
+
+        senderField = createInfoField(infoPanel, "Sender:");
+        receiverField = createInfoField(infoPanel, "Receiver:");
+        shipmentDetailsField = createInfoField(infoPanel, "Shipment Details:");
+        locationField = createInfoField(infoPanel, "Current Location:");
+        statusField = createInfoField(infoPanel, "Status:");
+        estimatedDeliveryField = createInfoField(infoPanel, "Estimated Delivery:");
+
+        add(infoPanel, BorderLayout.CENTER);
+
+        // Feedback section
+        JPanel feedbackPanel = new JPanel(new BorderLayout());
+        JLabel feedbackLabel = new JLabel("Your Feedback:");
+        JTextField feedbackField = new JTextField();
+        feedbackPanel.add(feedbackLabel, BorderLayout.WEST);
+        feedbackPanel.add(feedbackField, BorderLayout.CENTER);
+
+        JButton submitFeedbackButton = new JButton("Submit Feedback");
+        feedbackPanel.add(submitFeedbackButton, BorderLayout.EAST);
+        add(feedbackPanel, BorderLayout.SOUTH);
+
+        // Bottom panel for tracking history
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        JLabel historyLabel = new JLabel("Tracking History:");
+        bottomPanel.add(historyLabel, BorderLayout.NORTH);
+
+        tableModel = new DefaultTableModel(new String[]{"Timestamp", "Location", "Status"}, 0);
+        trackingTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(trackingTable);
+        bottomPanel.add(scrollPane, BorderLayout.CENTER);
+
+        add(bottomPanel, BorderLayout.EAST);
+
+        // Action for track button
+        trackButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                startTracking(feedbackField, submitFeedbackButton);
+            }
+        });
+
+        // Action for submit feedback button
+        submitFeedbackButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String feedback = feedbackField.getText();
+                if (feedback.isEmpty()) {
+                    JOptionPane.showMessageDialog(ParcelTrackingSystem.this, "Please enter your feedback.", "Error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(ParcelTrackingSystem.this, "Thank you for your feedback!", "Feedback Received", JOptionPane.INFORMATION_MESSAGE);
+                    feedbackField.setEditable(false); // Disable feedback after submission
+                    submitFeedbackButton.setEnabled(false); // Disable button after submission
+                }
+            }
+        });
+
+        submitFeedbackButton.setEnabled(false); // Initially disable the feedback button
+    }
+
+    private JTextField createInfoField(JPanel panel, String labelText) {
+        JLabel label = new JLabel(labelText);
+        JTextField textField = new JTextField();
+        textField.setEditable(false);
+        panel.add(label);
+        panel.add(textField);
+        return textField;
+    }
+
+    private void startTracking(JTextField feedbackField, JButton submitFeedbackButton) {
+        String userId = userIdField.getText();
+        String parcelId = parcelIdField.getText();
+
+        if (userId.isEmpty() || parcelId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please enter both User ID and Parcel ID.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Reset tracking step and clear previous history
+        trackingStep = 0;
+        tableModel.setRowCount(0); // Clear table
+        feedbackField.setText(""); // Clear previous feedback
+        feedbackField.setEditable(false); // Disable feedback initially
+        submitFeedbackButton.setEnabled(false); // Disable feedback button initially
+
+        // Simulated parcel and shipment data
+        senderField.setText("Shafana");
+        receiverField.setText("Fathima");
+        shipmentDetailsField.setText("Electronics - Fragile");
+        estimatedDeliveryField.setText("2024-11-28");
+        locationField.setText("Warehouse");
+        statusField.setText("Processing");
+
+        // Start live updates using a Timer
+        if (timer != null) {
+            timer.cancel(); // Cancel any existing timer
+        }
+
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                updateTracking(feedbackField, submitFeedbackButton);
+            }
+        }, 0, 3000); // Update every 3 seconds
+    }
+
+    private void updateTracking(JTextField feedbackField, JButton submitFeedbackButton) {
+        trackingStep++;
+
+        // Simulated tracking updates
+        switch (trackingStep) {
+            case 1:
+                addTrackingUpdate("2024-11-25 09:00", "Warehouse", "Dispatched");
+                locationField.setText("Warehouse");
+                statusField.setText("Dispatched");
+                break;
+            case 2:
+                addTrackingUpdate("2024-11-25 12:00", "Sorting Center", "In Transit");
+                locationField.setText("Sorting Center");
+                statusField.setText("In Transit");
+                break;
+            case 3:
+                addTrackingUpdate("2024-11-25 15:00", "Distribution Center", "Out for Delivery");
+                locationField.setText("Distribution Center");
+                statusField.setText("Out for Delivery");
+                break;
+            case 4:
+                addTrackingUpdate("2024-11-25 18:00", "Customer Address", "Delivered");
+                locationField.setText("Customer Address");
+                statusField.setText("Delivered");
+                feedbackField.setEditable(true); // Enable feedback field
+                submitFeedbackButton.setEnabled(true); // Enable feedback button
+                timer.cancel(); // Stop updates once delivered
+                break;
+            default:
+                timer.cancel(); // Stop the timer if something unexpected happens
+        }
+    }
+
+    private void addTrackingUpdate(String timestamp, String location, String status) {
+        tableModel.addRow(new Object[]{timestamp, location, status});
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            ParcelTrackingSystem frame = new ParcelTrackingSystem();
+            frame.setVisible(true);
+   });
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Timer;
+import java.util.TimerTask;
+
+        public class ParcelTrackingSystem extends JFrame {
+
+            private JTextField userIdField, parcelIdField, senderField, receiverField, shipmentDetailsField, locationField, statusField, estimatedDeliveryField;
+            private JTable trackingTable;
+            private DefaultTableModel tableModel;
+            private Timer timer;
+            private int trackingStep = 0; // To simulate live tracking steps
+
+            public ParcelTrackingSystem() {
+                setTitle("Parcel Tracking System");
+                setSize(800, 600);
+                setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                setLocationRelativeTo(null);
+                setLayout(new BorderLayout());
+
+                // Top panel for user ID and parcel ID input
+                JPanel topPanel = new JPanel(new FlowLayout());
+
+                JLabel userIdLabel = new JLabel("User ID:");
+                userIdField = new JTextField(10);
+                JLabel parcelIdLabel = new JLabel("Parcel ID:");
+                parcelIdField = new JTextField(10);
+                JButton trackButton = new JButton("Track");
+
+                topPanel.add(userIdLabel);
+                topPanel.add(userIdField);
+                topPanel.add(parcelIdLabel);
+                topPanel.add(parcelIdField);
+                topPanel.add(trackButton);
+
+                add(topPanel, BorderLayout.NORTH);
+
+                // Middle panel for parcel and shipment information
+                JPanel infoPanel = new JPanel(new GridLayout(7, 2, 5, 5));
+
+                senderField = createInfoField(infoPanel, "Sender:");
+                receiverField = createInfoField(infoPanel, "Receiver:");
+                shipmentDetailsField = createInfoField(infoPanel, "Shipment Details:");
+                locationField = createInfoField(infoPanel, "Current Location:");
+                statusField = createInfoField(infoPanel, "Status:");
+                estimatedDeliveryField = createInfoField(infoPanel, "Estimated Delivery:");
+
+                add(infoPanel, BorderLayout.CENTER);
+
+                // Feedback section
+                JPanel feedbackPanel = new JPanel(new BorderLayout());
+                JLabel feedbackLabel = new JLabel("Your Feedback:");
+                JTextField feedbackField = new JTextField();
+                feedbackPanel.add(feedbackLabel, BorderLayout.WEST);
+                feedbackPanel.add(feedbackField, BorderLayout.CENTER);
+
+                JButton submitFeedbackButton = new JButton("Submit Feedback");
+                feedbackPanel.add(submitFeedbackButton, BorderLayout.EAST);
+                add(feedbackPanel, BorderLayout.SOUTH);
+
+                // Bottom panel for tracking history
+                JPanel bottomPanel = new JPanel(new BorderLayout());
+                JLabel historyLabel = new JLabel("Tracking History:");
+                bottomPanel.add(historyLabel, BorderLayout.NORTH);
+
+                tableModel = new DefaultTableModel(new String[]{"Timestamp", "Location", "Status"}, 0);
+                trackingTable = new JTable(tableModel);
+                JScrollPane scrollPane = new JScrollPane(trackingTable);
+                bottomPanel.add(scrollPane, BorderLayout.CENTER);
+
+                add(bottomPanel, BorderLayout.EAST);
+
+                // Action for track button
+                trackButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        startTracking(feedbackField, submitFeedbackButton);
+                    }
+                });
+
+                // Action for submit feedback button
+                submitFeedbackButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        String feedback = feedbackField.getText();
+                        if (feedback.isEmpty()) {
+                            JOptionPane.showMessageDialog(ParcelTrackingSystem.this, "Please enter your feedback.", "Error", JOptionPane.ERROR_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(ParcelTrackingSystem.this, "Thank you for your feedback!", "Feedback Received", JOptionPane.INFORMATION_MESSAGE);
+                            feedbackField.setEditable(false); // Disable feedback after submission
+                            submitFeedbackButton.setEnabled(false); // Disable button after submission
+                        }
+                    }
+                });
+
+                submitFeedbackButton.setEnabled(false); // Initially disable the feedback button
+            }
+
+            private JTextField createInfoField(JPanel panel, String labelText) {
+                JLabel label = new JLabel(labelText);
+                JTextField textField = new JTextField();
+                textField.setEditable(false);
+                panel.add(label);
+                panel.add(textField);
+                return textField;
+            }
+
+            private void startTracking(JTextField feedbackField, JButton submitFeedbackButton) {
+                String userId = userIdField.getText();
+                String parcelId = parcelIdField.getText();
+
+                if (userId.isEmpty() || parcelId.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Please enter both User ID and Parcel ID.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Reset tracking step and clear previous history
+                trackingStep = 0;
+                tableModel.setRowCount(0); // Clear table
+                feedbackField.setText(""); // Clear previous feedback
+                feedbackField.setEditable(false); // Disable feedback initially
+                submitFeedbackButton.setEnabled(false); // Disable feedback button initially
+
+                // Simulated parcel and shipment data
+                senderField.setText("Shafana");
+                receiverField.setText("Fathima");
+                shipmentDetailsField.setText("Electronics - Fragile");
+                estimatedDeliveryField.setText("2024-11-28");
+                locationField.setText("Warehouse");
+                statusField.setText("Processing");
+
+                // Start live updates using a Timer
+                if (timer != null) {
+                    timer.cancel(); // Cancel any existing timer
+                }
+
+                timer = new Timer();
+                timer.scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        updateTracking(feedbackField, submitFeedbackButton);
+                    }
+                }, 0, 3000); // Update every 3 seconds
+            }
+
+            private void updateTracking(JTextField feedbackField, JButton submitFeedbackButton) {
+                trackingStep++;
+
+                // Simulated tracking updates
+                switch (trackingStep) {
+                    case 1:
+                        addTrackingUpdate("2024-11-25 09:00", "Warehouse", "Dispatched");
+                        locationField.setText("Warehouse");
+                        statusField.setText("Dispatched");
+                        break;
+                    case 2:
+                        addTrackingUpdate("2024-11-25 12:00", "Sorting Center", "In Transit");
+                        locationField.setText("Sorting Center");
+                        statusField.setText("In Transit");
+                        break;
+                    case 3:
+                        addTrackingUpdate("2024-11-25 15:00", "Distribution Center", "Out for Delivery");
+                        locationField.setText("Distribution Center");
+                        statusField.setText("Out for Delivery");
+                        break;
+                    case 4:
+                        addTrackingUpdate("2024-11-25 18:00", "Customer Address", "Delivered");
+                        locationField.setText("Customer Address");
+                        statusField.setText("Delivered");
+                        feedbackField.setEditable(true); // Enable feedback field
+                        submitFeedbackButton.setEnabled(true); // Enable feedback button
+                        timer.cancel(); // Stop updates once delivered
+                        break;
+                    default:
+                        timer.cancel(); // Stop the timer if something unexpected happens
+                }
+            }
+
+            private void addTrackingUpdate(String timestamp, String location, String status) {
+                tableModel.addRow(new Object[]{timestamp, location, status});
+            }
+
+            public static void main(String[] args) {
+                SwingUtilities.invokeLater(() -> {
+                    ParcelTrackingSystem frame = new ParcelTrackingSystem();
+                    frame.setVisible(true);
+                });
+}
+        }}
+}
